@@ -1,0 +1,342 @@
+---
+title: "Analysis of Auckland Plan submissions"
+author: "Kate Newton"
+date: "10 December 2018"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+This contains the code for importing and analysing age, gender and ethnic data for submissions on Auckland Council's Auckland Plan, broken down to local board level. This data forms the basis of the RNZ story: 'White Noise', published on 21 January, 2019.
+
+# Load libraries
+
+```{r libraries, echo=FALSE, warning=FALSE}
+
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(naniar)
+library(stringr)
+library(readr)
+
+```
+
+# Import Excel file
+
+The following Excel file was provided by Auckland Council following a request from RNZ. Each line is a single submission, with columns indicating gender, ethnicity, age, the local board the submitter was from (if indicated), and whether the submission was from an individual or a group. This analysis deals only with submissions from individuals as no information was available about who or how many people the groups represented.
+
+```{r import data}
+
+submitters <- read_excel("raw-data/auckland_council_submissions.xlsx", sheet=1)
+# Gives a dataframe of 26556 objects and 10 variables
+
+```
+
+```{r tidying}
+
+# df shows both "Not Supplied" and "Not supplied" as values under "Local Board"
+
+submitters[10740:13545, 1] <- "Not supplied"
+
+```
+
+```{r remove groups}
+
+# New baseline dataset containing only individual submissions (keeping submitters df for reference)
+
+submitters_tidy <- submitters %>% 
+  filter(`Submitter Group`=="An individual")
+
+```
+
+# Count number of submissions from each local board
+
+```{r local boards summary}
+
+local_boards <- submitters_tidy %>% 
+  group_by(`Local Board`) %>% 
+  summarise(total.submissions=n())
+
+```
+
+# Ethnic and gender summaries for local boards
+
+A gender summary (exploratory only).
+
+```{r gender count}
+
+gender_count <- submitters_tidy %>% 
+  group_by(`Local Board`, Gender) %>% 
+  summarise(total.submissions=n())
+
+```
+
+And age.
+
+```{r ages}
+ages <- submitters_tidy %>% 
+  group_by(Age) %>% 
+  summarise(total=n())
+```
+
+# Tidy ethnicity data to find number of no responses
+
+The council's data provides either "Yes" or "No response", for six separate ethnic groupings, for each submission (to allow submitters to select more than one ethnic group). It also provided an option of "New Zealander (Kiwi)", which tells us nothing about ethnicity, so I classified this as a "No response" unless other ethnic groups were also selected. To turn this all into a single column classification, I united the six ethnicity columns and then renamed the resulting values where there was no response..
+
+```{r Find no responses}
+
+ethnic_no_response <- submitters_tidy %>% unite(Ethnicity, Euro, Maori, Pacific, Asian, MELAA, Other)
+# submitters_tidy gets used later on so need to keep it
+
+ethnic_no_response <- ethnic_no_response %>% mutate(Ethnicity=case_when(
+  Ethnicity=="No response_No response_No response_No response_No response_No response" ~ "No response", 
+  Ethnicity=="No response_No response_No response_No response_No response_New Zealander (Kiwi)" ~ "No response"))
+
+# Isolate the non-response totals
+
+ethnic_no_response <- ethnic_no_response %>% 
+  filter(Ethnicity=="No response") %>% 
+  group_by(`Local Board`) %>% 
+  summarise(total.submissions=n())
+
+```
+
+The dataframe [submitters_tidy] gets put aside for the main analysis - it's mainly helpful for visualisations/graphs requiring percentages to add up to 100 e.g. age. I deal with ethnicity a different way for the geographic analysis/visualisations.
+
+# Build additional columns for local_boards dataframe
+
+Returning to the summarised local boards data to add some additional columns for later on.
+
+```{r incomes}
+
+incomes <- read_excel("raw-data/2013_mb_dataset_Auckland_Region/2013-mb-dataset-Auckland-Region-household.xlsx", sheet=7, skip=9)
+
+incomes <- incomes %>% 
+  select(X__2, `Median household income ($)(18)(23)__2`) %>% 
+  rename(`Local Board`=X__2, `Median household income`=`Median household income ($)(18)(23)__2`) %>% 
+  mutate(`Local Board` = str_replace_all(`Local Board`, " Area", ""))
+
+incomes <- incomes[order(incomes$`Local Board`, incomes$`Median household income`), ]
+
+```
+
+```{r add incomes to local_boards df}
+
+local_boards <- left_join(local_boards, incomes, by="Local Board")
+
+```
+
+# Ethnicity analysis for geographic visualisation
+
+For the geographic visualisations, it doesn't matter if the ethnicity percentages add up to >100% - all I want to do is compare them to the ethnicity percentages for the overall population in each local board.
+
+```{r further ethnicity analysis}
+
+# Create columns that can give the count of ethnicities:
+
+ethnic_total <- submitters_tidy %>% mutate(euro_count=case_when(Euro=="No response" ~ 0, 
+                                                               Euro!="no response" ~ 1), 
+                                          maori_count=case_when(Maori=="No response" ~ 0, 
+                                                                Maori!="No response" ~ 1), 
+                                          pacific_count=case_when(Pacific=="No response" ~ 0, 
+                                                                  Pacific!="No response" ~ 1), 
+                                          asian_count=case_when(Asian=="No response" ~ 0, 
+                                                                Asian!="No response" ~ 1), 
+                                          melaa_count=case_when(MELAA=="No response" ~ 0, 
+                                                                MELAA!="No response" ~ 1), 
+                                          other_count=case_when(Other=="No response" ~ 0, 
+                                                                Other!="No response" ~ 1)) %>%  
+  select(`Local Board`, `Gender`, `Age`, euro_count, maori_count, 
+         pacific_count, asian_count, melaa_count, other_count)
+
+ethnic_total <- ethnic_total %>% group_by(`Local Board`) %>% 
+  summarise(Euro.submissions=sum(euro_count), 
+            Maori.submissions=sum(maori_count), 
+            Pacific.submissions=sum(pacific_count), 
+            Asian.submissions=sum(asian_count), 
+            MELAA.submissions=sum(melaa_count), 
+            Other.submissions=sum(other_count))
+
+```
+
+```{r further ethnicity analysis cont.}
+## Need to account for non-responses to the ethnicity question
+
+ethnic_combined <- left_join(ethnic_total, ethnic_no_response) %>% 
+  rename(no.ethnicity=total.submissions)
+
+ethnic_combined <- left_join(ethnic_combined, local_boards, by="Local Board")
+
+# And now find the total submissions where there is a response to the ethnicity question, because otherwise the non-responses are going to skew the percentage results further down. Leave the original total in as a column though.
+
+ethnic_final_LB <- ethnic_combined %>% 
+  mutate(ethnic.submissions=total.submissions-no.ethnicity) %>% 
+  select(-no.ethnicity)
+
+# And remove non-local board areas
+
+ethnic_final_LB <- ethnic_final_LB[-c(12, 15, 18),]
+
+```
+
+# Bring in general population data
+
+```{r Import NZ Census data and tidy}
+
+ethnic_pop <- read_excel("raw-data/2013_mb_dataset_Auckland_Region/2013-mb-dataset-Auckland-Region-individual-part-1.xlsx", sheet=7, skip=7)
+
+ethnic_pop <- ethnic_pop %>% 
+  select(`Auckland Local Board Area Description`, 
+         `2013 Census, ethnic group (grouped total responses)(7)(8), for the census usually resident population count(1)`, 
+         X__144, 
+         X__145, 
+         X__146, 
+         X__147, 
+         X__148, 
+         X__151) %>% 
+  rename(`Local Board`=`Auckland Local Board Area Description`, 
+         European=`2013 Census, ethnic group (grouped total responses)(7)(8), for the census usually resident population count(1)`, 
+         Maori=X__144, 
+         Pacific=X__145, 
+         Asian=X__146, 
+         MELAA=X__147, 
+         Other=X__148, 
+         Total_people=X__151)
+
+ethnic_pop <- ethnic_pop[order(ethnic_pop$`Local Board`, ethnic_pop$European), ]
+
+ethnic_pop <- ethnic_pop[-22,]
+
+ethnic_pop$Total_people <- as.numeric(ethnic_pop$Total_people)
+ethnic_pop$European <- as.numeric(ethnic_pop$European)
+ethnic_pop$Maori <- as.numeric(ethnic_pop$Maori)
+ethnic_pop$Pacific <- as.numeric(ethnic_pop$Pacific)
+ethnic_pop$Asian <- as.numeric(ethnic_pop$Asian)
+ethnic_pop$MELAA <- as.numeric(ethnic_pop$MELAA)
+ethnic_pop$Other <- as.numeric(ethnic_pop$Other)
+
+ethnic_pop <- ethnic_pop %>% mutate(`Local Board` = str_replace_all(`Local Board`, " Area", ""))
+
+```
+
+```{r merge general population and submission data}
+
+local_board_data <- left_join(ethnic_final_LB, ethnic_pop, by="Local Board")
+
+local_board_data <- local_board_data %>% 
+  rename(European.pop=European, 
+         Maori.pop=Maori, 
+         Pacific.pop=Pacific, 
+         Asian.pop=Asian, 
+         MELAA.pop=MELAA, 
+         Other.pop=Other, 
+         Total.pop=Total_people)
+
+local_board_data$total.submissions <- as.numeric(local_board_data$total.submissions)
+local_board_data$ethnic.submissions <- as.numeric(local_board_data$ethnic.submissions)
+
+local_board_data <- local_board_data %>% 
+  mutate(submissions.rate.board=total.submissions/Total.pop*100)
+
+# And each local board's share of the submissions
+
+local_board_data <- local_board_data %>% mutate(submissions.percent=total.submissions/sum(total.submissions)*100)
+
+```
+
+# Calculate ethnicity percentages for submissions data
+
+```{r Create tall data}
+
+# submissions tall data incl "no response" but without non-local board values
+ethnic_LB_tall <- ethnic_final_LB %>% 
+  gather("Ethnicity", "Count", 2:7) %>% 
+  arrange(`Local Board`)
+
+# general population data
+ethnic_pop_tall <- ethnic_pop %>% 
+  gather("Ethnicity", "Count", 2:7) %>% 
+  arrange(`Local Board`)
+
+```
+
+```{r Create percentage columns}
+
+
+# ethnic_LB_tall
+ethnic_LB_tall <- ethnic_LB_tall %>% 
+  mutate(percent=round(Count/ethnic.submissions*100, 2))
+
+# ethnic_pop_tall
+ethnic_pop_tall <- ethnic_pop_tall %>% 
+  mutate(percent.of.population=round(Count/Total_people*100, 2))
+
+```
+
+# Join general population and submission population data together
+```{r More failed joins}
+
+# ethnic_complete_data <- left_join(ethnic_LB_tall, ethnic_pop_tall, by="Local Board")
+# This isn't working as it should - duplicating each set of local board data
+# rm(ethnic_complete_data)
+
+```
+
+I'm going to extract the columns I want from ethnic_LB_tall one by one and add them to ethnic_pop_tall by naming new columns. This isn't a great solution but it will work for now.
+
+```{r a fake join}
+
+submissions.count.vector <- pull(ethnic_LB_tall, Count)
+submissions.percent.vector <- pull(ethnic_LB_tall, percent)
+submissions.ethnic.vector <- pull(ethnic_LB_tall, ethnic.submissions)
+submissions.total.vector <- pull(ethnic_LB_tall, total.submissions)
+
+ethnic_pop_tall["Submissions"] <- submissions.count.vector
+ethnic_pop_tall["Total.submissions"] <- submissions.total.vector
+ethnic_pop_tall["percent.of.ethnic.submissions"] <- submissions.percent.vector
+ethnic_pop_tall["Total.ethnic.submission"] <- submissions.ethnic.vector
+
+ethnic_pop_tall$Total.submissions <- as.numeric(ethnic_pop_tall$Total.submissions)
+
+ethnic_complete_data <- ethnic_pop_tall
+
+# re-order and rename columns
+
+ethnic_complete_data <- ethnic_complete_data[c(1,2,9,3,4,5,6,8,7)]
+
+ethnic_complete_data <- ethnic_complete_data %>% 
+  select(-Total.submissions) %>% 
+  rename(Total.pop=Total_people, 
+         Total.submissions=Total.ethnic.submission, 
+         Pop.count=Count, 
+         Percent.of.pop=percent.of.population, 
+         percent.of.submissions=percent.of.ethnic.submissions)
+
+# Restore ethnic_pop_tall
+
+ethnic_pop_tall <- ethnic_pop_tall[-c(6,7,8,9)]
+
+```
+
+# Calculate percentage gap
+
+OMFG. Okay. Now I can calculate the percentage point gap between each ethnicity's proportion of the population and the proportion of submissions they made.
+
+```{r percentage gap}
+ethnic_complete_data <- ethnic_complete_data %>% 
+  mutate(pct.gap=percent.of.submissions-Percent.of.pop) %>% 
+  arrange(Ethnicity)
+
+```
+
+[ethnic_complete_data] - tall data - is the dataframe I will use for the geographic visualisations broken down by ethnicity. [local_board_data] is short and wide and can be used for overall calculations. [ages] gets used for age data viz.
+
+```{r save final dataframes needed for viz}
+
+write_csv(ethnic_complete_data, "output-data/ethnic-complete-data.csv")
+write_csv(local_board_data, "output-data/local-board-data.csv")
+write_csv(ages, "output-data/ages.csv")
+```

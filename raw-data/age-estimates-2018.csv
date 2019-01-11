@@ -1,0 +1,23 @@
+#NAME?,"<?xml version=""1.0""?><WebTableParameter xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns=""""><DataTable Code=""TABLECODE7508"" HasMetadata=""true""><Name LocaleIsoCode=""en"">Subnational population estimates (RC, constituency), by age and sex, at 30 June 2013-18 (2018 boundaries)</Name><Dimension Code=""YEAR"" Display=""labels""><Name LocaleIsoCode=""en"">Year at 30 June</Name><Member Code=""2018"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">2018</Name></Member></Dimension><Dimension Code=""SEX"" Display=""labels""><Name LocaleIsoCode=""en"">Sex</Name><Member Code=""SEX3"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">Total people, sex</Name></Member></Dimension><Dimension Code=""AGE"" Display=""labels""><Name LocaleIsoCode=""en"">Age</Name><Member Code=""TOTALALLAGES"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">Total people, age</Name><ChildMember Code=""AGE0014"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">0-14 years</Name></ChildMember><ChildMember Code=""AGE1519"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">15-19 years</Name></ChildMember><ChildMember Code=""AGE2024"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">20-24 years</Name></ChildMember><ChildMember Code=""AGE2529"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">25-29 years</Name></ChildMember><ChildMember Code=""AGE3034"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">30-34 years</Name></ChildMember><ChildMember Code=""AGE3539"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">35-39 years</Name></ChildMember><ChildMember Code=""AGE4044"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">40-44 years</Name></ChildMember><ChildMember Code=""AGE4549"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">45-49 years</Name></ChildMember><ChildMember Code=""AGE5054"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">50-54 years</Name></ChildMember><ChildMember Code=""AGE5559"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">55-59 years</Name></ChildMember><ChildMember Code=""AGE6064"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">60-64 years</Name></ChildMember><ChildMember Code=""AGE6569"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">65-69 years</Name></ChildMember><ChildMember Code=""AGE7074"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">70-74 years</Name></ChildMember><ChildMember Code=""AGE7579"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">75-79 years</Name></ChildMember><ChildMember Code=""AGE8084"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">80-84 years</Name></ChildMember><ChildMember Code=""AGE8500"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">85 years and over</Name></ChildMember></Member></Dimension><Dimension Code=""AREA"" HasMetadata=""true"" Display=""labels""><Name LocaleIsoCode=""en"">Area</Name><Member Code=""02"" HasOnlyUnitMetadata=""false""><Name LocaleIsoCode=""en"">Auckland region</Name></Member></Dimension><Tabulation Axis=""horizontal""><Dimension Code=""YEAR"" /><Dimension Code=""SEX"" /></Tabulation><Tabulation Axis=""vertical""><Dimension Code=""AREA"" /><Dimension Code=""AGE"" /></Tabulation><Tabulation Axis=""page"" /><Formatting><Labels LocaleIsoCode=""en"" /><Power>0</Power><Decimals>-1</Decimals><SkipEmptyLines>false</SkipEmptyLines><FullyFillPage>false</FullyFillPage><SkipEmptyCols>false</SkipEmptyCols><SkipLineHierarchy>true</SkipLineHierarchy><SkipColHierarchy>true</SkipColHierarchy><Page>1</Page></Formatting></DataTable><Format><ShowEmptyAxes>true</ShowEmptyAxes><Page>1</Page><EnableSort>true</EnableSort><IncludeFlagColumn>false</IncludeFlagColumn><IncludeTimeSeriesId>false</IncludeTimeSeriesId><DoBarChart>false</DoBarChart><FreezePanes>true</FreezePanes><MaxBarChartLen>65</MaxBarChartLen></Format><Query><AbsoluteUri>http://nzdotstat.stats.govt.nz/wbos/View.aspx?QueryId=&amp;QueryType=Public&amp;Lang=en</AbsoluteUri></Query></WebTableParameter>",,
+"Dataset: Subnational population estimates (RC, constituency), by age and sex, at 30 June 2013-18 (2018 boundaries)",,,
+Year at 30 June,,,2018
+Sex,,,"Total people, sex"
+Area,Age,,
+Auckland region,"Total people, age",,1695900
+,  0-14 years,,326300
+,  15-19 years,,108870
+,  20-24 years,,140060
+,  25-29 years,,162680
+,  30-34 years,,138740
+,  35-39 years,,116900
+,  40-44 years,,104550
+,  45-49 years,,111300
+,  50-54 years,,104230
+,  55-59 years,,97080
+,  60-64 years,,81630
+,  65-69 years,,66980
+,  70-74 years,,52630
+,  75-79 years,,37140
+,  80-84 years,,23690
+,  85 years and over,,23040
+data extracted on 26 Nov 2018 02:30 UTC (GMT) from NZ.Stat,,,

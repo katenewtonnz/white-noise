@@ -1,0 +1,250 @@
+---
+title: "Mapping Auckland Plan submission data"
+author: "Kate Newton"
+date: "10 December 2018"
+output: 
+  html_document: 
+    toc: true 
+    toc_float: true
+---
+
+This Markdown file imports pre-tidied data from "Analysis of Auckland Plan submissions" to create age, income, and ethnicity visualisations for the RNZ story: 'White Noise', published on 21 January, 2019. It only creates the visualisations for the desktop version of the story - the slightly tweaked ggplots used for the mobile versions are not included here. Labels, fonts and some other cosmetic tweaks were made to the saved files in Photoshop.
+
+# Load libraries
+
+```{r Load libraries, echo=FALSE, warning=FALSE}
+
+library(downloader)
+library(readr)
+library(stringr)
+library(ggplot2)
+library(ggthemes)
+library(sf)
+library(dplyr)
+library(tidyr)
+
+```
+
+# Load geo data
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+download("http://www3.stats.govt.nz/digitalboundaries/annual/ESRI_Shapefile_2017_Digital_Boundaries_Generalised_Clipped.zip", dest="raw-data/boundaries.zip", mode="wb")
+unzip ("raw-data/boundaries.zip", exdir = "raw-data")
+
+
+board_locations <- "raw-data/2017 Digital boundaries Generalised Clipped/CB2017_GV_Clipped.shp"
+  
+geo <- st_read(board_locations)
+
+geo <- geo[166:186,]
+
+geo <- geo %>% mutate(CB2017_NAM = str_replace_all(CB2017_NAM, " Area", ""))
+geo <- with(geo, geo[order(CB2017_NAM),])
+
+```
+
+# Join with local board data
+
+```{r join summarised submissions data, warning=FALSE}
+
+local_board_data <- read_csv("output-data/local-board-data.csv")
+
+local_boards_geo <- left_join(geo, local_board_data, by=c("CB2017_NAM"="Local Board"))
+
+# drop some columns and rename others; calculate rate of submission for each local board
+
+local_boards_geo <- local_boards_geo %>% 
+  select(-c(CB2017)) %>% 
+  rename(`Local Board`=CB2017_NAM) %>% 
+  mutate(per1000.submitted=round(total.submissions/Total.pop*1000, 0))
+
+```
+
+# Join with detailed ethnicity data
+
+```{r ethnicity dataframe, warning=F, message=F}
+
+ethnic_complete_data <- read_csv("output-data/ethnic-complete-data.csv")
+
+ethnicity_gap_geo <- left_join(geo, ethnic_complete_data, by=c("CB2017_NAM"="Local Board"))
+
+ethnicity_gap_geo <- ethnicity_gap_geo %>% 
+  arrange(Ethnicity)
+
+```
+
+# Subset the data to create maps showing under/over-representation of each major ethnicity
+
+Rather than facet the data (which would give me maps for 'Other' and 'MELAA', which aren't hugely significant in the data), I've arranged the dataframe by ethnicity so I can easily subset and visualise a paticular ethnicity (European, Asian, Maori and Pacific).
+
+I've used the same colour palette for each, setting the midpoint at 0, the midpoint colour white, and the limits at the biggest +/- pct.gap. This way the gradient remains constant despite the fluctuating percentage gaps in each visualisation.
+
+```{r Maori}
+
+maori_pct <- ethnicity_gap_geo[43:63,]
+
+ggplot(maori_pct) + 
+  geom_sf(aes(fill=pct.gap), color="#211f20") + 
+  scale_fill_gradient2(low = "#D63F38", 
+                       high = "#2081AA", midpoint = 0, 
+                       guide = "colourbar", name="Percentage gap", limits = c(-31, 31), labels = NULL) +  
+  theme_void() + 
+  theme(panel.grid.major = element_line(color="transparent"), 
+        plot.background = element_rect(fill = "#211f20"), 
+        plot.margin = unit(c(0.5,1,2,1), "cm"), 
+        legend.position = "bottom", 
+        legend.title = element_text(vjust = 0.85)) + 
+  guides(fill = guide_colourbar(barheight = 1, barwidth = 15, ticks = F, title = NULL))
+
+ggsave("viz/maori-final.jpg", width=10.67, height=7.79, dpi=144)
+
+```
+
+```{r Pacific}
+
+pac_pct <- ethnicity_gap_geo[106:126,]
+
+ggplot(pac_pct) + 
+  geom_sf(aes(fill=pct.gap), color="#211f20") + 
+  scale_fill_gradient2(low = "#D63F38", 
+                       high = "#2081AA", midpoint = 0, 
+                       guide = "colourbar", name="Percentage gap", limits = c(-31, 31), labels = NULL) +  
+  theme_void() + 
+  theme(panel.grid.major = element_line(color="transparent"), 
+        plot.background = element_rect(fill = "#211f20"), 
+        plot.margin = unit(c(0.5,1,2,1), "cm"), 
+        legend.position = "bottom", 
+        legend.title = element_text(vjust = 0.85)) + 
+  guides(fill = guide_colourbar(barheight = 1, barwidth = 15, ticks = F, title = NULL))
+
+ggsave("viz/pacific-final.jpg", width=10.67, height=7.79, dpi=144)
+
+```
+
+```{r Asian}
+
+asian_pct <- ethnicity_gap_geo[1:21,]
+  
+ggplot(asian_pct) + 
+  geom_sf(aes(fill=pct.gap), color="#211f20") + 
+  scale_fill_gradient2(low = "#D63F38", 
+                       high = "#2081AA", midpoint = 0, 
+                       guide = "colourbar", name="Percentage gap", limits = c(-31, 31), labels = NULL) +  
+  theme_void() + 
+  theme(panel.grid.major = element_line(color="transparent"), 
+        plot.background = element_rect(fill = "#211f20"), 
+        plot.margin = unit(c(0.5,1,2,1), "cm"), 
+        legend.position = "bottom", 
+        legend.title = element_text(vjust = 0.85)) + 
+  guides(fill = guide_colourbar(barheight = 1, barwidth = 15, ticks = F, title = NULL))
+
+ggsave("viz/asian-final.jpg", width=10.67, height=7.79, dpi=144)
+
+```
+
+```{r Pakeha}
+
+euro_pct <- ethnicity_gap_geo[22:42,]
+
+ggplot(euro_pct) + 
+  geom_sf(aes(fill=pct.gap), color="#211f20") + 
+  scale_fill_gradient2(low = "#D63F38", 
+                       high = "#2081AA", midpoint = 0, 
+                       guide = "colourbar", name="Percentage gap", limits = c(-31, 31), labels = NULL) +  
+  theme_void() + 
+  theme(panel.grid.major = element_line(color="transparent"), 
+        plot.background = element_rect(fill = "#211f20"), 
+        plot.margin = unit(c(0.5,1,2,1), "cm"), 
+        legend.position = "bottom", 
+        legend.title = element_text(vjust = 0.85)) + 
+  guides(fill = guide_colourbar(barheight = 1, barwidth = 15, ticks = F, title = NULL))
+
+ggsave("viz/pakeha-final.jpg", width=10.67, height=7.79, dpi=144)
+
+```
+
+# Visualising effect of income on submission rates
+
+```{r income graph}
+
+ggplot(local_boards_geo, aes(x=`Median household income`, y=per1000.submitted, size=`total.submissions`, alpha = 0.6)) + 
+  geom_point(colour="#D63F38", fill="#D63F38") + 
+  expand_limits(x=30000, y=0) + 
+  scale_x_continuous(labels=c("$30,000", "$50,000", "$70,000", "$90,000", "$110,000")) + 
+  ylim(0,40) + 
+  theme_void() + 
+  theme(panel.grid.major.y = element_line(color="#EBEAE6", size=0.5), 
+        plot.background = element_rect(fill = "#221f20"), 
+        plot.margin = unit(c(5,8,3,4), "cm"),
+        panel.grid.minor = element_blank(), 
+        axis.ticks.y = element_blank(), 
+        axis.text = element_text(colour="#EBEAE6"), 
+        axis.text.y = element_text(hjust=-0.1, size = 18), 
+        axis.text.x = element_text(size = 18), 
+        axis.title = element_blank(), 
+        legend.position="none") + 
+  scale_size(range = c(4,14), breaks = c(0,100,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800))
+
+ggsave("viz/income.jpg", width=10.67, height=7.79, dpi=144)
+
+
+```
+
+# Visualising age difference between submitters and general population
+
+```{r ages data wrangling}
+
+ages <- read_csv("output-data/ages.csv")
+
+ages_percent <- ages %>% 
+filter(Age!="No response") %>% 
+mutate(Percent=(total/sum(total)*100)) %>% 
+mutate(Percent=round(Percent, digits=2))
+
+# Bring in Auckland population data (using latest June 2018 estimates rather than Census data, seeing as it doesn't need to be broken down by local board)
+
+age_pop <- read_csv("raw-data/age-estimates-2018.csv", skip=5) %>% 
+select(Age=`Total people, age`, Total=`1695900`)
+
+age_pop <- age_pop[-17,]
+
+# The estimates data is in five-year age bands so I need to rename and add rows so it matches the format of the submissions data
+
+age_pop <- age_pop %>% 
+  mutate(Age = case_when(Age=="0-14 years"~"14 or younger", Age=="15-19 years"~"15-24", Age=="20-24 years"~"15-24", Age=="25-29 years"~"25-34", Age=="30-34 years"~"25-34", Age=="35-39 years"~"35-44", Age=="40-44 years"~"35-44", Age=="45-49 years"~"45-54", Age=="50-54 years"~"45-54", Age=="55-59 years"~"55-64", Age=="60-64 years"~"55-64", Age=="65-69 years"~"65-74", Age=="70-74 years"~"65-74", Age=="75-79 years"~"75 or older", Age=="80-84 years"~"75 or older", Age=="85 years and over"~"75 or older")) %>% 
+  group_by(Age) %>% 
+  summarise(Total=sum(Total)) %>% 
+  mutate(Percent=Total/sum(Total)*100) %>% # add percent column
+  mutate(Percent=round(Percent, digits=2))
+
+# Create false y-values so I can force the viz to graph two bars
+
+age_pop$x <- c("Population", "Population", "Population", "Population", "Population", "Population", "Population", "Population")
+ages_percent$x <- c("Submissions", "Submissions", "Submissions", "Submissions", "Submissions", "Submissions", "Submissions", "Submissions")
+
+ages_final <- full_join(age_pop, ages_percent) %>% 
+select(-c(total, Total))
+
+
+```
+
+```{r age graph}
+
+ggplot(ages_final, aes(y=Percent, x=x, fill=Age)) + 
+geom_bar(stat="identity", position = position_stack(reverse=T), width=0.4, colour="white", size=1) + 
+scale_fill_manual(values = c("#F9C7C4", "#ef726c", "#D63F38", "#EBEAE6", "#B3B3AC", "#6D7570", "#404441", "#1E2722")) + 
+coord_flip() + 
+theme_void() + 
+theme(legend.position="bottom") + 
+theme(plot.background = element_rect(fill = "#221f20"), 
+plot.margin = unit(c(2,2,3,2), "cm"), 
+legend.text = (element_text(colour = "white", size=20)), 
+        legend.title = (element_text(colour = "white", size=20)), 
+legend.key.size = unit(2,"line"))
+        
+ggsave("viz/age-proportions.jpg", width=10.67, height=7.79, dpi=144)
+
+
+```
+

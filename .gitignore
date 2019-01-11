@@ -1,0 +1,10 @@
+## History
+
+*.Rhistory
+
+*.Rproj.user
+
+*.RData
+
+*Thumbs.db
+.Rproj.user
