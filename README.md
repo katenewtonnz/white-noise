@@ -38,6 +38,8 @@ The output-data folder provides the .csv files necessary to create the visualist
 |akl-submissions-map.html|HTML output of the Rmd file|
 |viz|Folder containing draft versions of visualisations used in the final story. Titles and labels were added and dimensions were tweaked in Photoshop.|
 
+Note: The maps visualising ethnic disparities omit the 'Other' and 'MELAA' (Middle Eastern, Latin American and African) categories as these categories make up only a very small (albeit growing) percentage of Auckland's population and include a disparate mix of ethnicities. However, the data is retained in the dataframes I have created.
+
 ---
 
 ## Feedback
