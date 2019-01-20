@@ -1,6 +1,6 @@
 # White Noise: An analysis of submissions on Auckland Council's Auckland Plan 2050
 
-This is the repo for the data analysis and visualisations included in a story published by RNZ's [In Depth section](https://www.radionz.co.nz/news/in-depth) on January 21, 2019.
+This is the repo for the data analysis and visualisations included in the feature story [White Noise](http://shorthand.radionz.co.nz/white-noise/index.html) published by RNZ's [In Depth section](https://www.radionz.co.nz/news/in-depth) on January 21, 2019.
 
 It contains the data and code used to analyse ethnic, income and age group disparities between local board areas, among the ~26,000 submissions made on the Auckland Plan 2050, a document setting out Auckland Council's long-term vision for Auckland, New Zealand. It also contains code for the visualisations that accompanied the final story.
 
